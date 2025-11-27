@@ -1,0 +1,46 @@
+#include <string>
+#include <iostream>
+
+using namespace std;
+
+
+struct Node {
+int id;
+string name;
+string last_name;
+char gender; 
+int age;
+int id_father;
+bool is_dead;
+bool was_king;
+bool is_king;
+
+// Punteros del Árbol Binario (Relaciones Familiares)
+Node* child1; // Primogénito
+Node* child2; // Segundo hijo
+Node* parent; // Padre
+
+// COntrustor
+Node(int _id, const string& _name, const string& _last_name, char _gender, int _age, int _id_father, bool _is_dead, bool _was_king, bool _is_king);
+};
+
+class RoyalFamilyTree {
+private:
+    Node* root; // El primer rey (raíz del árbol)
+    Node* allNodesHead; // Puntero al inicio de nuestra lista de todos los nodos
+    
+    // Métodos (Funciones) Privados Auxiliares
+    void _loadFromCsv(const string& filepath);
+    Node* _findNodeById(int id);
+    // ... (Aquí irán más funciones auxiliares)
+    
+public:
+    RoyalFamilyFamilyTree();
+    ~RoyalFamilyTree();
+
+    void loadData(const string& filepath);
+    void showSuccessionLine();
+    void assignNewKing(int deadKingId);
+    void updateNodeData(int nodeId);
+};
+

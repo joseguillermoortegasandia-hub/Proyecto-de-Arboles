@@ -43,4 +43,54 @@ public:
     void assignNewKing(int deadKingId);
     void updateNodeData(int nodeId);
 };
+// Implementación del constructor del Nodo
+Node::Node(int _id, const string& _name, const string& _last_name, char _gender, int _age, int _id_father, bool _is_dead, bool _was_king, bool _is_king)
+    : id(_id), name(_name), last_name(_last_name), gender(_gender), age(_age), id_father(_id_father),
+      is_dead(_is_dead), was_king(_was_king), is_king(_is_king),
+      child1(nullptr), child2(nullptr), parent(nullptr), next(nullptr) {}
+
+// Implementación del constructor de la clase
+RoyalFamilyTree::RoyalFamilyTree() : root(nullptr), allNodesHead(nullptr) {}
+// Implementación auxiliar del destructor (libera la memoria)
+void RoyalFamilyTree::_destroyTree(Node* node) {
+    if (node == nullptr) return;
+    _destroyTree(node->child1);
+    _destroyTree(node->child2);
+    delete node; // Elimina el nodo de la memoria
+}
+
+// Implementación del destructor (función de limpieza)
+RoyalFamilyTree::~RoyalFamilyTree() {
+    _destroyTree(root);
+}
+
+// Función auxiliar para buscar un nodo por ID (usando la lista enlazada 'next')
+Node* RoyalFamilyTree::_findNodeById(int id) {
+    Node* current = allNodesHead;
+    while (current != nullptr) {
+        if (current->id == id) {
+            return current;
+        }
+        current = current->next;
+    }
+    return nullptr;
+}
+
+// Función auxiliar para convertir "1" o "0" del CSV a true/false
+bool stringToBool(const string& s) {
+    return stoi(s) == 1;
+}
+id,name,last_name,gender,age,id_father,is_dead,was_king,is_king
+1,Rey,Fundador,H,100,0,1,1,0
+2,Rey,I,H,65,1,0,1,0
+3,Tio,Rama,H,62,1,0,0,0
+4,Rey,Actual,H,50,0,0,1
+5,Hermana,Actual,M,55,2,0,0,0
+6,Príncipe,Primogénito,H,25,4,0,0,0
+7,Princesa,Hija,M,20,4,0,0,0
+8,Nieto,Joven,H,10,6,0,0,0
+9,Primo,Varón,H,30,5,0,0,0
+
+
+
 

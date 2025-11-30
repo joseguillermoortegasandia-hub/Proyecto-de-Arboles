@@ -1,1 +1,12 @@
+Proyecto-de-Arboles
+Sistema de sucesion de la Familia Real: -Este proyecto va a ser desarrollado en c++ y simula el sistema de herencia de una monarquia -Utilizaremos una serie de especificaciones para realizarlo (primagenito varon, rama del hermano, limite de edad,etc)
 
+Estructura del Proyecto src/: Contiene todo el código fuente del programa (.cpp y .h). bin/: Contiene el ejecutable (royal_succession) y los datos de prueba (family.csv).
+
+Requisitos de Compilación Se requiere un compilador de C++ para generar el ejecutable. Instrucciones de Compilación y Ejecución
+
+Asegúrese de estar en la carpeta raíz.
+
+Compile el proyecto usando el siguiente comando: *bash g++ src/main.cpp src/RoyalFamilyTree.cpp -o bin/royal_succession
+
+Ejecute el programa: *bash ./bin/royal_succession

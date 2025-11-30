@@ -1,0 +1,60 @@
+#ifndef ROYALFAMILYTREE_H
+#define ROYALFAMILYTREE_H
+
+#include <string>
+#include <iostream>
+
+using namespace std;
+
+// --- ESTRUCTURA FUNDAMENTAL (Hecha a mano, sin STL) ---
+struct Node {
+    // Datos y Estado
+    int id;
+    string name;
+    string last_name;
+    char gender; 
+    int age;
+    int id_father;
+    bool is_dead;
+    bool was_king;
+    bool is_king;
+
+    // Punteros para la estructura del Árbol (child1 tiene prioridad sobre child2)
+    Node* child1; 
+    Node* child2; 
+    Node* parent; 
+    
+    // Puntero para la lista global de nodos (Sustituye a std::map para indexación)
+    Node* next; 
+
+    Node(int _id, const string& _name, const string& _last_name, char _gender, int _age, int _id_father, bool _is_dead, bool _was_king, bool _is_king);
+};
+
+// --- CLASE DE GESTIÓN (La interfaz de tu librería) ---
+class RoyalFamilyTree {
+private:
+    Node* root; 
+    Node* allNodesHead; 
+    
+    // Funciones auxiliares
+    void _loadFromCsv(const string& filepath);
+    Node* _findNodeById(int id);
+    void _printNodeDetails(Node* n);
+    void _preOrderTraversal(Node* node);
+    void _destroyTree(Node* node);
+    bool _isEligible(Node* node);
+    Node* _getSibling(Node* node);
+    Node* _findAncestorWithTwoChildren(Node* startNode);
+    Node* _findEligibleMale(Node* startNode);
+    
+public:
+    RoyalFamilyTree();
+    ~RoyalFamilyTree();
+    
+    void loadData(const string& filepath); // Función 1: Cargar y construir
+    void showSuccessionLine();           // Función 2: Mostrar línea
+    void assignNewKing(int deadKingId);    // Función 3: Asignar nuevo rey
+    void updateNodeData(int nodeId);       // Función 4: Modificar datos
+};
+
+#endif // ROYALFAMILYTREE_H

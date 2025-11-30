@@ -1,6 +1,5 @@
-// 💾 Archivo: src/main.cpp
 
-#include "RoyalFamilyTree.h" // <-- ¡La única librería!
+#include "RoyalFamilyTree.h" 
 
 using namespace std;
 
@@ -16,10 +15,10 @@ void showMenu() {
 int main() {
     RoyalFamilyTree tree; 
     
-    // Pasamos la ruta como const char*
+    // Ruta del archivo CSV
     tree.loadData("bin/family.csv"); 
 
-    if (!tree.root) {
+    if (tree.getRoot() == nullptr) {
         return 1;
     }
 
@@ -29,11 +28,8 @@ int main() {
         if (!(cin >> choice)) {
             // Manejo de error de entrada
             cin.clear();
-            
-            // Limpieza de buffer con un bucle simple de I/O
             char dummy;
-            while (cin.get(dummy) && dummy != '\n'); 
-            
+            while (cin.get(dummy) && dummy != '\n'); // Limpieza manual de buffer
             choice = 0; 
         }
 

@@ -1,9 +1,4 @@
-
-
 #include "RoyalFamilyTree.h" 
-#include <cstdlib> 
-
-// --- Implementación de CustomString ---
 
 CustomString::CustomString() {
     length = 0;
@@ -16,6 +11,7 @@ void CustomString::append(char c) {
         data[length] = '\0';
     }
 }
+
 
 void CustomString::copy(const char* s) {
     length = 0;
@@ -64,26 +60,42 @@ bool CustomString::toBool() const {
     return (length == 1 && data[0] == '1');
 }
 
-// --- Implementación de Node ---
-
-Node::Node(int _id, const CustomString& _name, const CustomString& _last_name, char _gender, int _age, int _id_father, bool _is_dead, bool _was_king, bool _is_king)
-    : id(_id), gender(_gender), age(_age), id_father(_id_father),
-      is_dead(_is_dead), was_king(_was_king), is_king(_is_king),
-      child1(nullptr), child2(nullptr), parent(nullptr), next(nullptr) {
-          name = _name;
-          last_name = _last_name;
-      }
-
-// --- Implementación de RoyalFamilyTree ---
 
 RoyalFamilyTree::RoyalFamilyTree() : root(nullptr), allNodesHead(nullptr) {}
 
 RoyalFamilyTree::~RoyalFamilyTree() { 
     _destroyTree(root); 
-    // Nota: Aunque el destructor del árbol elimina todos los nodos,
-    // es crucial que la lógica de destrucción se base en el árbol (root) 
-    // y no en la lista enlazada (allNodesHead) para evitar doble liberación.
 }
+
+
+void RoyalFamilyTree::_destroyTree(Node* node) {
+    if (node == nullptr) return;
+    _destroyTree(node->child1);
+    _destroyTree(node->child2);
+    delete node;
+}
+
+Node* RoyalFamilyTree::_getSibling(Node* node) {
+    if (!node || !node->parent) return nullptr;
+    Node* parent = node->parent;
+
+    if (parent->child1 == node && parent->child2 != nullptr) return parent->child2;
+    if (parent->child2 == node && parent->child1 != nullptr) return parent->child1;
+    return nullptr;
+}
+
+Node* RoyalFamilyTree::_findAncestorWithTwoChildren(Node* startNode) {
+    Node* current = startNode;
+    while (current && current->parent) {
+        Node* parent = current->parent;
+        if (parent->child1 && parent->child2) {
+            return parent;
+        }
+        current = current->parent;
+    }
+    return nullptr;
+}
+
 
 void RoyalFamilyTree::_readFileLine(FILE* file, CustomString& result) {
     result.length = 0;
@@ -110,13 +122,6 @@ void RoyalFamilyTree::_tokenizeLine(const CustomString& line, CustomString data[
             data[token_index].append(c);
         }
     }
-}
-
-void RoyalFamilyTree::_destroyTree(Node* node) {
-    if (node == nullptr) return;
-    _destroyTree(node->child1);
-    _destroyTree(node->child2);
-    delete node;
 }
 
 Node* RoyalFamilyTree::_findNodeById(int id) {
@@ -159,27 +164,6 @@ bool RoyalFamilyTree::_isEligible(Node* node) {
     return node != nullptr && !node->is_dead && node->age < 70;
 }
 
-Node* RoyalFamilyTree::_getSibling(Node* node) {
-    if (!node || !node->parent) return nullptr;
-    Node* parent = node->parent;
-
-    if (parent->child1 == node && parent->child2 != nullptr) return parent->child2;
-    if (parent->child2 == node && parent->child1 != nullptr) return parent->child1;
-    return nullptr;
-}
-
-Node* RoyalFamilyTree::_findAncestorWithTwoChildren(Node* startNode) {
-    Node* current = startNode;
-    while (current && current->parent) {
-        Node* parent = current->parent;
-        if (parent->child1 && parent->child2) {
-            return parent;
-        }
-        current = current->parent;
-    }
-    return nullptr;
-}
-
 Node* RoyalFamilyTree::_findEligibleMale(Node* startNode) {
     if (startNode == nullptr) return nullptr;
 
@@ -201,7 +185,7 @@ void RoyalFamilyTree::_loadFromCsv(const char* filepath) {
     }
 
     CustomString line;
-    _readFileLine(file, line); // Leer encabezado
+    _readFileLine(file, line); 
 
     while (true) {
         _readFileLine(file, line);
@@ -222,9 +206,9 @@ void RoyalFamilyTree::_loadFromCsv(const char* filepath) {
                 bool was_king = data[7].toBool();
                 bool is_king = data[8].toBool();
 
-                Node* newNode = new Node(id, name, last_name, gender, age, id_father, is_dead, was_king, is_king);
+            
+                Node* newNode = new Node(id, name, last_name, gender, age, id_father, is_dead, was_king, is_king); 
                 
-                // Agregar a la lista enlazada de todos los nodos
                 newNode->next = allNodesHead;
                 allNodesHead = newNode;
 
@@ -309,7 +293,7 @@ void RoyalFamilyTree::assignNewKing(int deadKingId) {
         newKing = _findEligibleMale(searchStart);
     }
 
-    if (!newKing) { // Búsqueda de Reina (Género 'M')
+    if (!newKing) { 
         cout << "No se encontraron varones elegibles. Buscando Reina..." << endl;
         Node* current = allNodesHead;
         Node* youngestQueen = nullptr;

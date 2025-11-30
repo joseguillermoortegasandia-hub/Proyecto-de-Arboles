@@ -1,65 +1,298 @@
-
-#ifndef ROYALFAMILYTREE_H
-#define ROYALFAMILYTREE_H
-
-#include <string>
-#include <iostream>
+#include "RoyalFamilyTree.h"
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
+#include <limits> 
 
 using namespace std;
 
-// --- ESTRUCTURA FUNDAMENTAL (Hecha a mano, sin STL) ---
-struct Node {
-    // Datos y Estado
-    int id;
-    string name;
-    string last_name;
-    char gender; 
-    int age;
-    int id_father;
-    bool is_dead;
-    bool was_king;
-    bool is_king;
+// --- Helpers para Conversión y Búsqueda ---
+bool stringToBool(const string& s) {
+    try {
+        return stoi(s) == 1;
+    } catch (const invalid_argument& e) {
+        return false;
+    }
+}
 
-    // Punteros para la estructura del Árbol (child1 tiene prioridad sobre child2)
-    Node* child1; 
-    Node* child2; 
-    Node* parent; 
+Node::Node(int _id, const string& _name, const string& _last_name, char _gender, int _age, int _id_father, bool _is_dead, bool _was_king, bool _is_king)
+    : id(_id), name(_name), last_name(_last_name), gender(_gender), age(_age), id_father(_id_father),
+      is_dead(_is_dead), was_king(_was_king), is_king(_is_king),
+      child1(nullptr), child2(nullptr), parent(nullptr), next(nullptr) {}
+
+RoyalFamilyTree::RoyalFamilyTree() : root(nullptr), allNodesHead(nullptr) {}
+
+void RoyalFamilyTree::_destroyTree(Node* node) {
+    if (node == nullptr) return;
+    _destroyTree(node->child1);
+    _destroyTree(node->child2);
+    delete node;
+}
+
+RoyalFamilyTree::~RoyalFamilyTree() {
+    _destroyTree(root);
+}
+
+Node* RoyalFamilyTree::_findNodeById(int id) {
+    Node* current = allNodesHead;
+    while (current != nullptr) {
+        if (current->id == id) {
+            return current;
+        }
+        current = current->next;
+    }
+    return nullptr;
+}
+
+// --- Función 1: Carga y Construcción del Árbol ---
+void RoyalFamilyTree::_loadFromCsv(const string& filepath) {
+    ifstream file(filepath);
+    if (!file.is_open()) {
+        cerr << "Error: No se pudo abrir el archivo CSV." << endl;
+        return;
+    }
+
+    string line;
+    getline(file, line); 
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string data[9]; 
+        int i = 0;
+
+        while (getline(ss, data[i], ',') && i < 9) { i++; }
+
+        if (i == 9) {
+            try {
+                int id = stoi(data[0]);
+                char gender = data[3][0];
+                int age = stoi(data[4]);
+                int id_father = stoi(data[5]);
+                bool is_dead = stringToBool(data[6]);
+                bool was_king = stringToBool(data[7]);
+                bool is_king = stringToBool(data[8]);
+
+                Node* newNode = new Node(id, data[1], data[2], gender, age, id_father, is_dead, was_king, is_king);
+                
+                // Conexión manual a la lista global (simulación de mapa)
+                newNode->next = allNodesHead;
+                allNodesHead = newNode;
+
+                if (id_father == 0) {
+                    root = newNode;
+                }
+            } catch (const exception& e) {
+                cerr << "Error al parsear línea: " << line << " - " << e.what() << endl;
+            }
+        }
+    }
+
+    // Conectar a los hijos con sus padres (Construcción del Árbol)
+    Node* current = allNodesHead;
+    while (current != nullptr) {
+        if (current->id_father != 0) {
+            Node* father = _findNodeById(current->id_father);
+            if (father) {
+                current->parent = father;
+                
+                if (father->child1 == nullptr) {
+                    father->child1 = current; 
+                } else if (father->child2 == nullptr) {
+                    father->child2 = current; 
+                }
+            }
+        }
+        current = current->next;
+    }
+}
+
+void RoyalFamilyTree::loadData(const string& filepath) {
+    _loadFromCsv(filepath);
+}
+
+// --- Función 2: Mostrar la Línea de Sucesión ---
+void RoyalFamilyTree::_printNodeDetails(Node* n) {
+    if (n == nullptr) return;
+    string status = n->is_king ? " (REY ACTUAL)" : "";
+    status += n->is_dead ? " (FALLECIDO)" : "";
     
-    // Puntero para la lista global de nodos (Sustituye a std::map para indexación)
-    Node* next; 
+    cout << "ID: " << n->id << ", Nombre: " << n->name << " " << n->last_name 
+         << ", Edad: " << n->age << ", Género: " << n->gender << status << endl;
+}
 
-    Node(int _id, const string& _name, const string& _last_name, char _gender, int _age, int _id_father, bool _is_dead, bool _was_king, bool _is_king);
-};
+void RoyalFamilyTree::_preOrderTraversal(Node* node) {
+    if (node == nullptr) return;
+            
+    if (!node->is_dead && node->age < 70) {
+        cout << "- "; _printNodeDetails(node);
+    }
 
-// --- CLASE DE GESTIÓN (La interfaz de tu librería) ---
-class RoyalFamilyTree {
-private:
-    Node* root; 
-    Node* allNodesHead; 
+    _preOrderTraversal(node->child1);
+    _preOrderTraversal(node->child2);
+}
+
+void RoyalFamilyTree::showSuccessionLine() {
+    cout << "\n##  Línea de Sucesión Actual (Vivos < 70) ##" << endl;
+    _preOrderTraversal(root);
+    cout << "------------------------------------------" << endl;
+}
+
+// --- Lógica de Sucesión (Helpers) ---
+bool RoyalFamilyTree::_isEligible(Node* node) {
+    return node != nullptr && !node->is_dead && node->age < 70;
+}
+
+Node* RoyalFamilyTree::_getSibling(Node* node) {
+    if (!node || !node->parent) return nullptr;
+    Node* parent = node->parent;
+
+    if (parent->child1 == node && parent->child2 != nullptr) return parent->child2;
+    if (parent->child2 == node && parent->child1 != nullptr) return parent->child1;
+    return nullptr;
+}
+
+Node* RoyalFamilyTree::_findAncestorWithTwoChildren(Node* startNode) {
+    Node* current = startNode;
+    while (current && current->parent) {
+        Node* parent = current->parent;
+        if (parent->child1 && parent->child2) {
+            return parent;
+        }
+        current = current->parent;
+    }
+    return nullptr;
+}
+
+Node* RoyalFamilyTree::_findEligibleMale(Node* startNode) {
+    if (startNode == nullptr) return nullptr;
+
+    if (_isEligible(startNode) && startNode->gender == 'H') {
+        return startNode;
+    }
+
+    Node* result = _findEligibleMale(startNode->child1);
+    if (result) return result;
+
+    return _findEligibleMale(startNode->child2);
+}
+
+// --- Función 3: Asignación de Rey ---
+void RoyalFamilyTree::assignNewKing(int deadKingId) {
+    Node* currentKing = _findNodeById(deadKingId);
+    if (!currentKing || !currentKing->is_king) {
+        cout << "Error: El nodo ID " << deadKingId << " no es el rey actual o no existe." << endl;
+        return;
+    }
+
+    currentKing->is_king = false;
+    currentKing->was_king = true;
+
+    if (currentKing->age >= 70) {
+        cout << "\nEl monarca ID " << currentKing->id << " abdica por edad (" << currentKing->age << " años)." << endl;
+    } else {
+        currentKing->is_dead = true;
+        cout << "\nEl monarca ID " << currentKing->id << " ha fallecido." << endl;
+    }
+
+    Node* newKing = nullptr;
+
+    // A. BÚSQUEDA DE VARÓN (Reglas de Prioridad)
+    newKing = _findEligibleMale(currentKing->child1); 
     
-    // Funciones auxiliares
-    void _loadFromCsv(const string& filepath);
-    Node* _findNodeById(int id);
-    void _printNodeDetails(Node* n);
-    void _preOrderTraversal(Node* node);
-    void _destroyTree(Node* node);
-    bool _isEligible(Node* node);
-    Node* _getSibling(Node* node);
-    Node* _findAncestorWithTwoChildren(Node* startNode);
-    Node* _findEligibleMale(Node* startNode);
+    if (!newKing) {
+        Node* sibling = _getSibling(currentKing); 
+        if (sibling) {
+            newKing = _findEligibleMale(sibling);
+            if (!newKing && _isEligible(sibling) && sibling->gender == 'H') newKing = sibling;
+        }
+    }
     
-public:
-    RoyalFamilyTree();
-    ~RoyalFamilyTree();
+    if (!newKing && currentKing->parent) { 
+        Node* uncle = _getSibling(currentKing->parent);
+        if (uncle) {
+            newKing = _findEligibleMale(uncle);
+            if (!newKing && _isEligible(uncle) && uncle->gender == 'H' && uncle->child1 == nullptr && uncle->child2 == nullptr) {
+                newKing = uncle;
+            }
+        }
+    }
+
+    if (!newKing) { 
+        Node* ancestor = _findAncestorWithTwoChildren(currentKing);
+        Node* searchStart = ancestor ? ancestor : root;
+        newKing = _findEligibleMale(searchStart);
+    }
+
+    // B. BÚSQUEDA DE MUJER
+    if (!newKing) {
+        cout << "No se encontraron varones elegibles. Buscando Reina..." << endl;
+        Node* current = allNodesHead;
+        Node* youngestQueen = nullptr;
+
+        while (current != nullptr) {
+            if (_isEligible(current) && current->gender == 'M' && current->age >= 15) {
+                if (youngestQueen == nullptr || current->age < youngestQueen->age) {
+                    youngestQueen = current;
+                }
+            }
+            current = current->next;
+        }
+        newKing = youngestQueen;
+    }
+
+    // C. ASIGNAR LA CORONA
+    if (newKing) {
+        newKing->is_king = true;
+        cout << "\n ¡NUEVO MONARCA ASIGNADO! " << endl;
+        string title = (newKing->gender == 'H') ? "Rey" : "Reina";
+        cout << title << ": ID " << newKing->id << ", " << newKing->name << " " << newKing->last_name << endl;
+    } else {
+        cout << "\n¡ADVERTENCIA! No se encontró ningún descendiente elegible para heredar el trono." << endl;
+    }
+    cout << string(50, '-') << endl;
+}
+
+// --- Función 4: Modificación de Datos ---
+void RoyalFamilyTree::updateNodeData(int nodeId) {
+    Node* node = _findNodeById(nodeId);
+    if (!node) {
+        cout << "Error: Nodo con ID " << nodeId << " no encontrado." << endl;
+        return;
+    }
+
+    cout << "\n##  Modificando: " << node->name << " " << node->last_name << endl;
+    cout << "Ingrese el campo a modificar (name, last_name, gender, age, is_dead (0/1), was_king (0/1), is_king (0/1)): ";
+    string key;
+    cin >> key;
     
-    void loadData(const string& filepath); // Función 1: Cargar y construir
-    void showSuccessionLine();           // Función 2: Mostrar línea
-    void assignNewKing(int deadKingId);    // Función 3: Asignar nuevo rey
-    void updateNodeData(int nodeId);       // Función 4: Modificar datos
-};
+    if (key == "id" || key == "id_father") {
+        cout << "Advertencia: El campo '" << key << "' es inmutable." << endl;
+        return;
+    }
+    
+    cout << "Ingrese el nuevo valor para " << key << ": ";
+    string value;
+    cin >> value;
 
-#endif // ROYALFAMILYTREE_H
-
-
+    bool success = false;
+    try {
+        if (key == "name") { node->name = value; success = true; }
+        else if (key == "last_name") { node->last_name = value; success = true; }
+        else if (key == "gender" && (value == "H" || value == "M")) { node->gender = value[0]; success = true; }
+        else if (key == "age") { node->age = stoi(value); success = true; }
+        else if (key == "is_dead") { node->is_dead = stringToBool(value); success = true; }
+        else if (key == "was_king") { node->was_king = stringToBool(value); success = true; }
+        else if (key == "is_king") { node->is_king = stringToBool(value); success = true; }
+        
+        if (success) {
+            cout << "  - '" << key << "' actualizado a: " << value << endl;
+            cout << " Actualización completada." << endl;
+        } else {
+            cout << "Advertencia: Campo no reconocido o valor inválido." << endl;
+        }
+    } catch (const exception& e) {
+        cout << "Error al procesar el valor. Intente de nuevo." << endl;
+    }
+}
 
 

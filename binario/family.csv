@@ -1,0 +1,10 @@
+id,name,last_name,gender,age,id_father,is_dead,was_king,is_king
+1,Rey,Fundador,H,100,0,1,1,0
+2,Rey,I,H,65,1,0,1,0
+3,Tio,Rama,H,62,1,0,0,0
+4,Rey,Actual,H,50,2,0,0,1
+5,Hermana,Actual,M,55,2,0,0,0
+6,Principe,Primogenito,H,25,4,0,0,0
+7,Princesa,Hija,M,20,4,0,0,0
+8,Nieto,Joven,H,10,6,0,0,0
+9,Primo,Varon,H,30,5,0,0,0
